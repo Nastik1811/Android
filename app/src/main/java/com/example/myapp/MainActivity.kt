@@ -10,19 +10,43 @@ import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import android.content.DialogInterface
 import androidx.appcompat.app.AlertDialog
+import android.provider.Settings.Secure
+import android.widget.TextView
+import android.R.attr.versionName
+import android.R.attr.versionCode
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.os.Build
+import android.telephony.TelephonyManager
+import androidx.annotation.RequiresApi
 
 
 class MainActivity : AppCompatActivity() {
 
     private val STATE_PERMISSION_CODE = 1;
 
+    @SuppressLint("SetTextI18n")
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
             != PackageManager.PERMISSION_GRANTED) {
             requestStatePermission();
         }
+
+        val pinfo = packageManager.getPackageInfo(packageName, 0)
+        val telephonyManager: TelephonyManager
+        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager;
+        val verNameTextView = findViewById<TextView>(R.id.verNameView)
+        val deviceIdTextView = findViewById<TextView>(R.id.deviceIdView)
+
+        verNameTextView.text = "The app version name is " + pinfo.versionName
+        deviceIdTextView.text = telephonyManager.imei
+
+
     }
 
     private fun requestStatePermission() {
@@ -59,6 +83,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == STATE_PERMISSION_CODE) {
             if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission GRANTED", Toast.LENGTH_SHORT).show()
+
             } else {
                 Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
