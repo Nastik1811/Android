@@ -6,25 +6,29 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.widget.Toast
-import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import android.content.DialogInterface
 import androidx.appcompat.app.AlertDialog
-import android.provider.Settings.Secure
 import android.widget.TextView
-import android.R.attr.versionName
-import android.R.attr.versionCode
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageInfo
 import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.annotation.RequiresApi
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProviders
+
+
+class MainViewModel : ViewModel() {
+}
 
 
 class MainActivity : AppCompatActivity() {
 
-    private val STATE_PERMISSION_CODE = 1;
+    private val STATE_PERMISSION_CODE = 1
 
     @SuppressLint("SetTextI18n")
     @RequiresApi(Build.VERSION_CODES.O)
@@ -32,21 +36,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val model = ViewModelProviders.of(this)[MainViewModel::class.java]
+        val verNameTextView = findViewById<TextView>(R.id.verNameView)
+        val deviceIdTextView = findViewById<TextView>(R.id.deviceIdView)
+
+        val pinfo = packageManager.getPackageInfo(packageName, 0)
+
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
             != PackageManager.PERMISSION_GRANTED) {
             requestStatePermission();
         }
 
-        val pinfo = packageManager.getPackageInfo(packageName, 0)
-        val telephonyManager: TelephonyManager
-        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager;
-        val verNameTextView = findViewById<TextView>(R.id.verNameView)
-        val deviceIdTextView = findViewById<TextView>(R.id.deviceIdView)
-
         verNameTextView.text = "The app version name is " + pinfo.versionName
-        deviceIdTextView.text = telephonyManager.imei
-
-
+        deviceIdTextView.text = getDeviceId()
     }
 
     private fun requestStatePermission() {
@@ -81,12 +84,27 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         if (requestCode == STATE_PERMISSION_CODE) {
-            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            val deviceIdTextView = findViewById<TextView>(R.id.deviceIdView)
+            if (grantResults.size == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                deviceIdTextView.text = getDeviceId()
                 Toast.makeText(this, "Permission GRANTED", Toast.LENGTH_SHORT).show()
 
             } else {
                 Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
+                deviceIdTextView.text = getDeviceId()
             }
+            deviceIdTextView.text = getDeviceId()
+        }
+    }
+
+    @SuppressLint("NewApi")
+    fun getDeviceId(): String {
+        val telephonyManager: TelephonyManager
+        try {
+            telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager;
+            return "DeviceID: " + telephonyManager.imei
+        } catch (e: SecurityException) {
+            return "DeviceID: Permission denied"
         }
     }
 }

@@ -10,7 +10,14 @@ def getVersionName = { ->
         commandLine 'git', 'describe', '--tags'
         standardOutput = stdout
     }
-    return stdout.toString().trim()
+    def matcher = stdout.toString().trim() =~ /\d/
+    def versionNameStr = matcher[0] + "." + matcher[1] + "."
+    try {
+        versionNameStr += matcher[2]
+    } catch (Exception e) {
+        versionName += "0"
+    }
+    return versionNameStr
 }
 
 android {
@@ -41,4 +48,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
 }
